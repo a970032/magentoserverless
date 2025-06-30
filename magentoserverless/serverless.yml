@@ -1,0 +1,77 @@
+service: magentowrapper 
+
+provider:
+    name: aws
+    region: ap-east-1
+    httpApi:
+       cors: true
+    ecr:
+      images:
+        cli:
+          # Path to the `Dockerfile` file
+          path: ../magento
+        web:
+          path: ../magento
+          file: Dockerfileweb
+
+plugins:
+    - ./vendor/bref/bref
+    - ./vendor/bref/extra-php-extensions
+
+functions:
+    web:
+        image:
+          name: web
+        timeout: 29 # in seconds (API Gateway has a timeout of 29 seconds)
+        memorySize: 4096
+        fileSystemConfig:
+          localMountPath: /mnt/magento
+          arn: arn:aws:elasticfilesystem:ap-east-1:039092478854:access-point/fsap-0eceb9e2b116694e2
+        vpc:
+          securityGroupIds:
+            - sg-79313111
+          subnetIds:
+            - subnet-be7092d7
+        events:
+            -   httpApi: '*'
+    cli:
+       image:
+          name: cli
+       #handler: command.php
+       #runtime: php-83-console
+       timeout: 900
+       memorySize: 8192
+       fileSystemConfig:
+         localMountPath: /mnt/magento
+         arn: arn:aws:elasticfilesystem:ap-east-1:039092478854:access-point/fsap-0eceb9e2b116694e2
+       vpc:
+         securityGroupIds:
+           - sg-79313111
+         subnetIds:
+           - subnet-be7092d7 
+       #layers:
+        #   -   ${bref-extra:gd-php-83}
+    cron:
+       image:
+         name: cli
+       timeout: 900
+       memorySize: 8192
+       events:
+          - schedule:
+              enabled: false
+              rate: rate(1 minute)
+              input: '"cron:run"'
+       fileSystemConfig:
+         localMountPath: /mnt/magento
+         arn: arn:aws:elasticfilesystem:ap-east-1:039092478854:access-point/fsap-0eceb9e2b116694e2
+       vpc:
+         securityGroupIds:
+           - sg-79313111
+         subnetIds:
+           - subnet-be7092d7
+# Exclude files from deployment
+package:
+  patterns:
+        - '!node_modules/**'
+        - '!tests/**'
+        - 'serverless.yml'

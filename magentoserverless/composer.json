@@ -1,0 +1,7 @@
+{
+    "require": {
+        "bref/bref": "^2.3",
+        "bref/extra-php-extensions": "^1.7",
+        "aws/aws-sdk-php": "^3.338"
+    }
+}
